@@ -1,0 +1,352 @@
+:root {
+    --bg-color: #f2f2f2;
+    --primary-blue: #5c6bc0;
+    --primary-blue-hover: #3f51b5;
+    --accent-pink: #ff4081;
+    --slot-bg: #689f8d;
+    --tank-bg: #e57373;
+    /* Rojo suave para el tanque */
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- ESTILOS GENERALES Y HEADER (Igual que antes) --- */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.logo-text-blue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #3b4cca;
+}
+
+.logo-text-pink {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent-pink);
+}
+
+.subtitle {
+    color: #666;
+    margin-top: 5px;
+}
+
+main {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* --- ARENA --- */
+.battle-display {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 20px 0;
+    background-color: #f8f9fa;
+    border-radius: 12px;
+}
+
+.pokemon-slot {
+    width: 110px;
+    text-align: center;
+}
+
+.slot-circle {
+    width: 100px;
+    height: 100px;
+    background-color: var(--slot-bg);
+    border-radius: 50%;
+    border: 4px solid white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 10px auto;
+    overflow: hidden;
+}
+
+.tank-circle {
+    background-color: var(--tank-bg);
+}
+
+.slot-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+}
+
+.slot-label {
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: #333;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    display: inline-block;
+}
+
+.vs-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.vs-badge {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #e0e0e0;
+    font-style: italic;
+}
+
+.damage-badge {
+    background: var(--accent-pink);
+    color: white;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.damage-badge.hidden {
+    opacity: 0;
+}
+
+.results-box {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8eaf6;
+    border-left: 5px solid var(--primary-blue);
+    border-radius: 4px;
+    text-align: center;
+}
+
+.results-box.hidden {
+    display: none;
+}
+
+/* --- CONTROLES Y AUTOCOMPLETADO --- */
+.controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 25px;
+}
+
+.col-title {
+    color: var(--primary-blue);
+    border-bottom: 2px solid #eee;
+    margin-top: 0;
+}
+
+.input-wrapper {
+    margin-bottom: 15px;
+    position: relative;
+    /* Necesario para posicionar la lista */
+}
+
+label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #888;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+}
+
+input:focus {
+    border-color: var(--primary-blue);
+    outline: none;
+}
+
+/* ESTILO DE LA LISTA DE SUGERENCIAS */
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    /* Oculto por defecto */
+}
+
+.suggestions-list div {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    text-transform: capitalize;
+}
+
+.suggestions-list div:hover {
+    background-color: #f0f5ff;
+    color: var(--primary-blue);
+}
+
+.btn-small {
+    background: none;
+    border: 1px solid var(--tank-bg);
+    color: var(--tank-bg);
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    width: 100%;
+}
+
+.btn-small:hover {
+    background: var(--tank-bg);
+    color: white;
+}
+
+.action-area {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.btn-primary {
+    background: var(--primary-blue);
+    color: white;
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary:hover {
+    background: var(--primary-blue-hover);
+}
+
+.btn-secondary {
+    background: #90a4ae;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+@media (max-width: 600px) {
+    .controls-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .battle-display {
+        gap: 10px;
+    }
+
+    .slot-circle {
+        width: 70px;
+        height: 70px;
+    }
+}
+
+/* ... (Añadir esto al final de tu CSS) ... */
+
+/* --- QUICK PICKS --- */
+.quick-picks {
+    margin-bottom: 15px;
+}
+
+.label-mini {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: #999;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 5px;
+    margin-top: 10px;
+}
+
+.picks-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pick-btn {
+    background: white;
+    border: 1px solid #ddd;
+    color: #555;
+    padding: 6px 12px;
+    border-radius: 20px;
+    /* Estilo píldora */
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.pick-btn:hover {
+    background: #f0f5ff;
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.separator {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
+}
+
+.btn-boss {
+    width: 100%;
+    background: #333;
+    color: #ffeb3b;
+    /* Amarillo alerta */
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.3s;
+}
+
+.btn-boss:hover {
+    background: #000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}

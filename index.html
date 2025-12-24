@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeCalc: Rompe-Tanques</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-area">
+            <span class="logo-text-blue">Pokémon</span>
+            <span class="logo-text-pink">Team Planner</span>
+        </div>
+        <p class="subtitle">Calculadora de Daño vs Tanques (Max Stats)</p>
+    </header>
+
+    <main>
+        <section class="card arena-card">
+            <div class="battle-header">
+                <h2 class="section-title">La Arena</h2>
+            </div>
+
+            <div class="battle-display">
+                <div class="pokemon-slot">
+                    <div class="slot-circle" id="attacker-circle">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/eggs/1.png"
+                            id="attacker-img" alt="Attacker">
+                    </div>
+                    <div class="slot-label" id="attacker-label">Atacante</div>
+                </div>
+
+                <div class="vs-column">
+                    <div class="vs-badge">VS</div>
+                    <div id="damage-result" class="damage-badge hidden">0%</div>
+                </div>
+
+                <div class="pokemon-slot">
+                    <div class="slot-circle tank-circle" id="defender-circle">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png"
+                            id="defender-img" alt="Defender">
+                    </div>
+                    <div class="slot-label" id="defender-label">Ultimate Tank</div>
+                </div>
+            </div>
+
+            <div id="results-text" class="results-box hidden">
+            </div>
+        </section>
+
+        <section class="card options-card">
+            <div class="controls-grid">
+
+                <div class="control-column">
+                    <h3 class="col-title">Atacante</h3>
+                    <div class="input-wrapper">
+                        <label>Pokémon</label>
+                        <input type="text" id="attackerInput" placeholder="Busca Pokémon..." autocomplete="off">
+                        <div id="attacker-suggestions" class="suggestions-list"></div>
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Movimiento</label>
+                        <input type="text" id="moveInput" placeholder="Busca Movimiento..." autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="control-column">
+                    <h3 class="col-title">Defensor (El Tanque)</h3>
+
+                    <div class="input-wrapper">
+                        <label>Pokémon Objetivo</label>
+                        <input type="text" id="defenderInput" placeholder="Busca o elige abajo..." autocomplete="off">
+                        <div id="defender-suggestions" class="suggestions-list"></div>
+                    </div>
+
+                    <div class="quick-picks">
+                        <span class="label-mini">Top Stats:</span>
+                        <div class="picks-row">
+                            <button onclick="selectTank('blissey')" class="pick-btn"
+                                title="Mayor HP del juego (Base 255)">❤ Blissey</button>
+                            <button onclick="selectTank('shuckle')" class="pick-btn"
+                                title="Mayor Defensa Física y Especial (Base 230)">🛡️ Shuckle</button>
+                            <button onclick="selectTank('regice')" class="pick-btn"
+                                title="Defensa Especial Legendaria (Base 200)">🔮 Regice</button>
+                        </div>
+                        <span class="label-mini">Aguante General (Mixed Walls):</span>
+                        <div class="picks-row">
+                            <button onclick="selectTank('toxapex')" class="pick-btn">☣️ Toxapex</button>
+                            <button onclick="selectTank('lugia')" class="pick-btn">🦅 Lugia</button>
+                            <button onclick="selectTank('giratina-altered')" class="pick-btn">👻 Giratina</button>
+                        </div>
+                    </div>
+
+                    <div class="tank-options">
+                        <hr class="separator">
+                        <button onclick="setUltimateTank()" class="btn-boss">💀 Usar Jefe Final (Max Stats)</button>
+                    </div>
+                </div>
+
+                <div class="action-area">
+                    <button onclick="calcularBatalla()" class="btn-primary">CALCULAR DAÑO</button>
+                    <button onclick="limpiar()" class="btn-secondary">Reiniciar</button>
+                </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
