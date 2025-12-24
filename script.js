@@ -1,21 +1,18 @@
 const API_URL = 'https://pokeapi.co/api/v2';
-let allPokemonNames = []; // Aquí guardaremos la lista para el autocompletado
+let allPokemonNames = []; 
 
-// --- 1. CONFIGURACIÓN INICIAL ---
-
-// Estadísticas del "Jefe Final" (Frankenstein)
+// Estadísticas del frankestein
 const ULTIMATE_TANK_STATS = {
     name: "Ultimate Tank",
     hp: 714,    // Max Blissey
     def: 614,   // Max Shuckle
     spDef: 614, // Max Shuckle
-    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png" // Shuckle como icono
+    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png" 
 };
 
-// Al cargar la página, obtenemos la lista de nombres para el autocompletado
 window.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Pedimos 1000+ pokemon (ligero porque solo pedimos nombres y urls)
+
         const response = await fetch(`${API_URL}/pokemon?limit=1300`);
         const data = await response.json();
         allPokemonNames = data.results.map(p => p.name);
@@ -24,12 +21,12 @@ window.addEventListener('DOMContentLoaded', async () => {
         console.error("Error cargando lista de Pokémon:", e);
     }
 
-    // Configurar eventos de autocompletado
+    // Configuracion de eventos de autocompletado
     setupAutocomplete(document.getElementById('attackerInput'), document.getElementById('attacker-suggestions'));
     setupAutocomplete(document.getElementById('defenderInput'), document.getElementById('defender-suggestions'));
 });
 
-// --- 2. LÓGICA DE AUTOCOMPLETADO ---
+// --- LÓGICA DE AUTOCOMPLETADO ---
 function setupAutocomplete(input, listContainer) {
     input.addEventListener('input', function () {
         const val = this.value.toLowerCase();
@@ -40,8 +37,8 @@ function setupAutocomplete(input, listContainer) {
             return;
         }
 
-        // Filtramos coincidencias
-        const matches = allPokemonNames.filter(name => name.startsWith(val)).slice(0, 5); // Max 5 sugerencias
+        // Filtro
+        const matches = allPokemonNames.filter(name => name.startsWith(val)).slice(0, 5); 
 
         if (matches.length > 0) {
             listContainer.style.display = 'block';
@@ -49,9 +46,9 @@ function setupAutocomplete(input, listContainer) {
                 const item = document.createElement('div');
                 item.textContent = name;
                 item.addEventListener('click', () => {
-                    input.value = name; // Poner nombre en el input
-                    listContainer.style.display = 'none'; // Ocultar lista
-                    // Opcional: Disparar una pre-carga de imagen aquí si quisieras
+                    input.value = name; 
+                    listContainer.style.display = 'none'; 
+ 
                 });
                 listContainer.appendChild(item);
             });
@@ -60,7 +57,7 @@ function setupAutocomplete(input, listContainer) {
         }
     });
 
-    // Ocultar si hacemos click fuera
+
     document.addEventListener('click', (e) => {
         if (e.target !== input) {
             listContainer.style.display = 'none';
@@ -68,7 +65,7 @@ function setupAutocomplete(input, listContainer) {
     });
 }
 
-// --- 3. FUNCIONES DE API Y CÁLCULO ---
+// --- FUNCIONES DE API Y CÁLCULO ---
 
 async function getPokemonData(name) {
     const cleanName = name.trim().toLowerCase().replace(' ', '-');
@@ -103,7 +100,7 @@ function calculateDamage(attacker, move, defenderStats) {
 
     if (attackClass === 'status' || power === 0) return { min: 0, max: 0, attackClass };
 
-    // STATS ATACANTE (Max Offense)
+    // STATS ATACANTE 
     let attackStatBase = 0;
     if (attackClass === 'physical') {
         attackStatBase = attacker.stats.find(s => s.stat.name === 'attack').base_stat;
@@ -130,12 +127,12 @@ function calculateDamage(attacker, move, defenderStats) {
     return { min: minDamage, max: maxDamage, attackClass };
 }
 
-// --- 4. FUNCIÓN PRINCIPAL ---
+// --- FUNCIÓN PRINCIPAL ---
 
 async function calcularBatalla() {
     const atkName = document.getElementById('attackerInput').value;
     const moveName = document.getElementById('moveInput').value;
-    const defName = document.getElementById('defenderInput').value; // Puede estar vacío
+    const defName = document.getElementById('defenderInput').value;
 
     const ui = {
         atkImg: document.getElementById('attacker-img'),
@@ -155,7 +152,7 @@ async function calcularBatalla() {
     ui.results.classList.remove('hidden');
 
     try {
-        // 1. Cargar Atacante y Movimiento
+        // Cargar Atacante y Movimiento
         const attacker = await getPokemonData(atkName);
         const move = await getMoveData(moveName);
 
@@ -163,14 +160,14 @@ async function calcularBatalla() {
         ui.atkImg.src = attacker.sprites.front_default;
         ui.atkLabel.textContent = attacker.name;
 
-        // 2. Determinar Defensor
-        let defenderStats = { ...ULTIMATE_TANK_STATS }; // Copia por defecto
+        //  Determinar Defensor
+        let defenderStats = { ...ULTIMATE_TANK_STATS }; 
 
         if (defName.trim() !== "") {
-            // El usuario eligió un tanque específico
+            // En caso de elegir tanque específico
             const defender = await getPokemonData(defName);
 
-            // Calculamos sus stats máximos posibles (Max Bulk)
+            // Calculo de stats máximos posibles 
             const hpBase = defender.stats.find(s => s.stat.name === 'hp').base_stat;
             const defBase = defender.stats.find(s => s.stat.name === 'defense').base_stat;
             const spDefBase = defender.stats.find(s => s.stat.name === 'special-defense').base_stat;
@@ -186,7 +183,7 @@ async function calcularBatalla() {
             ui.defImg.src = defender.sprites.front_default;
             ui.defLabel.textContent = defender.name;
         } else {
-            // Restaurar UI Jefe Final
+            // Restaurar UI frankestein
             ui.defImg.src = ULTIMATE_TANK_STATS.sprite;
             ui.defLabel.textContent = "BOSS: ULTIMATE TANK";
         }
@@ -222,7 +219,7 @@ async function calcularBatalla() {
     }
 }
 
-// Botón para reiniciar al Jefe Final
+// Botón para reiniciar al frankestein
 function setUltimateTank() {
     document.getElementById('defenderInput').value = '';
     document.getElementById('defender-img').src = ULTIMATE_TANK_STATS.sprite;
@@ -239,27 +236,19 @@ function limpiar() {
     document.getElementById('attacker-label').textContent = "Atacante";
 }
 
-// ... (código anterior igual) ...
 
-// --- NUEVA FUNCIÓN PARA LOS BOTONES RÁPIDOS ---
+// --- FUNCIÓN PARA BOTONES RÁPIDOS ---
 function selectTank(name) {
     const defInput = document.getElementById('defenderInput');
     defInput.value = name;
 
-    // Disparamos la búsqueda automáticamente para que el usuario vea el cambio al instante
-    // Primero simulamos que cargó (para UX)
     document.getElementById('defender-label').textContent = "Cargando...";
 
-    // Llamamos a la lógica principal (puedes reutilizar calcularBatalla o solo cargar la info)
-    // Para simplificar, hacemos que cargue los datos del tanque visualmente sin calcular daño todavía
-    // o calculamos todo si ya hay atacante.
-
-    // Truco: Si ya hay atacante, calculamos batalla. Si no, solo cargamos la foto del tanque.
     const atkValue = document.getElementById('attackerInput').value;
     if (atkValue) {
         calcularBatalla();
     } else {
-        // Solo cargar visualmente el tanque
+       
         updateTankVisuals(name);
     }
 }
@@ -273,5 +262,6 @@ async function updateTankVisuals(name) {
         console.error(e);
     }
 }
+
 
 // ... (asegúrate de que calcularBatalla use el valor del input actualizado) ...
