@@ -5,7 +5,7 @@
     --accent-pink: #ff4081;
     --slot-bg: #689f8d;
     --tank-bg: #e57373;
-    /* Rojo suave para el tanque */
+    /* Rojo suave- tanque */
 }
 
 body {
@@ -18,7 +18,7 @@ body {
     align-items: center;
 }
 
-/* --- ESTILOS GENERALES Y HEADER (Igual que antes) --- */
+/* --- ESTILOS GENERALES Y HEADER --- */
 header {
     text-align: center;
     margin-bottom: 20px;
@@ -163,7 +163,6 @@ main {
 .input-wrapper {
     margin-bottom: 15px;
     position: relative;
-    /* Necesario para posicionar la lista */
 }
 
 label {
@@ -203,7 +202,6 @@ input:focus {
     z-index: 100;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     display: none;
-    /* Oculto por defecto */
 }
 
 .suggestions-list div {
@@ -281,9 +279,7 @@ input:focus {
     }
 }
 
-/* ... (Añadir esto al final de tu CSS) ... */
-
-/* --- QUICK PICKS --- */
+/* --- Seleccion Rapida --- */
 .quick-picks {
     margin-bottom: 15px;
 }
@@ -349,4 +345,5 @@ input:focus {
 .btn-boss:hover {
     background: #000;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+
 }
