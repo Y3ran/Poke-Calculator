@@ -65,40 +65,38 @@
 
                 <div class="row-group">
                     <div class="input-group half">
-    <label>Item</label>
-    <select id="attacker-item">
-        <option value="">None</option>
-        
-        <optgroup label="Competitive Standards">
-            <option value="life-orb">Life Orb (1.3x Dmg)</option>
-            <option value="choice-band">Choice Band (1.5x Atk)</option>
-            <option value="choice-specs">Choice Specs (1.5x SpA)</option>
-            <option value="flame-orb">Flame Orb (Burn)</option>
-            <option value="toxic-orb">Toxic Orb (Poison)</option>
-        </optgroup>
-
-        <optgroup label="Type Enhancers (1.2x)">
-            <option value="silk-scarf">Silk Scarf (Normal)</option>
-            <option value="charcoal">Charcoal (Fire)</option>
-            <option value="mystic-water">Mystic Water (Water)</option>
-            <option value="magnet">Magnet (Electric)</option>
-            <option value="miracle-seed">Miracle Seed (Grass)</option>
-            <option value="never-melt-ice">Never-Melt Ice (Ice)</option>
-            <option value="black-belt">Black Belt (Fighting)</option>
-            <option value="poison-barb">Poison Barb (Poison)</option>
-            <option value="soft-sand">Soft Sand (Ground)</option>
-            <option value="sharp-beak">Sharp Beak (Flying)</option>
-            <option value="twisted-spoon">Twisted Spoon (Psychic)</option>
-            <option value="silver-powder">Silver Powder (Bug)</option>
-            <option value="hard-stone">Hard Stone (Rock)</option>
-            <option value="spell-tag">Spell Tag (Ghost)</option>
-            <option value="dragon-fang">Dragon Fang (Dragon)</option>
-            <option value="black-glasses">Black Glasses (Dark)</option>
-            <option value="metal-coat">Metal Coat (Steel)</option>
-            <option value="fairy-feather">Fairy Feather (Fairy)</option>
-        </optgroup>
-    </select>
-</div>
+                        <label>Item</label>
+                        <select id="attacker-item">
+                            <option value="">None</option>
+                            <optgroup label="Competitive Standards">
+                                <option value="life-orb">Life Orb (1.3x Dmg)</option>
+                                <option value="choice-band">Choice Band (1.5x Atk)</option>
+                                <option value="choice-specs">Choice Specs (1.5x SpA)</option>
+                                <option value="flame-orb">Flame Orb (Burn)</option>
+                                <option value="toxic-orb">Toxic Orb (Poison)</option>
+                            </optgroup>
+                            <optgroup label="Type Enhancers (1.2x)">
+                                <option value="silk-scarf">Silk Scarf (Normal)</option>
+                                <option value="charcoal">Charcoal (Fire)</option>
+                                <option value="mystic-water">Mystic Water (Water)</option>
+                                <option value="magnet">Magnet (Electric)</option>
+                                <option value="miracle-seed">Miracle Seed (Grass)</option>
+                                <option value="never-melt-ice">Never-Melt Ice (Ice)</option>
+                                <option value="black-belt">Black Belt (Fighting)</option>
+                                <option value="poison-barb">Poison Barb (Poison)</option>
+                                <option value="soft-sand">Soft Sand (Ground)</option>
+                                <option value="sharp-beak">Sharp Beak (Flying)</option>
+                                <option value="twisted-spoon">Twisted Spoon (Psychic)</option>
+                                <option value="silver-powder">Silver Powder (Bug)</option>
+                                <option value="hard-stone">Hard Stone (Rock)</option>
+                                <option value="spell-tag">Spell Tag (Ghost)</option>
+                                <option value="dragon-fang">Dragon Fang (Dragon)</option>
+                                <option value="black-glasses">Black Glasses (Dark)</option>
+                                <option value="metal-coat">Metal Coat (Steel)</option>
+                                <option value="fairy-feather">Fairy Feather (Fairy)</option>
+                            </optgroup>
+                        </select>
+                    </div>
                     <div class="input-group half">
                         <label>Ability</label>
                         <select id="attacker-ability"><option value="">Standard</option></select>
@@ -119,14 +117,16 @@
                 </div>
 
                 <div class="stats-panel">
-                    <h4>Stats & EVs</h4>
+                    <div class="stats-header">
+                        <span>Stat</span><span>EV Slider</span><span>EV</span><span>IV</span><span>Nature</span><span>Total</span>
+                    </div>
                     
                     <div class="stat-row">
                         <span class="stat-label">HP</span>
                         <input type="range" min="0" max="252" value="0" class="ev-slider" id="hp-ev">
                         <input type="number" min="0" max="252" value="0" class="ev-number" id="hp-ev-num">
                         <input type="number" value="31" class="iv-input" id="hp-iv">
-                        <span class="stat-total" id="hp-total">0</span>
+                        <span class="nature-placeholder"></span> <span class="stat-total" id="hp-total">0</span>
                     </div>
 
                     <div class="stat-row">
@@ -135,7 +135,7 @@
                         <input type="number" min="0" max="252" value="252" class="ev-number" id="atk-ev-num">
                         <input type="number" value="31" class="iv-input" id="atk-iv">
                         <select class="nature-select" id="atk-nature">
-                            <option value="1.1" selected>+</option><option value="1.0">-</option><option value="0.9">v</option>
+                            <option value="1.1" selected>+</option><option value="1.0">v</option><option value="0.9">-</option>
                         </select>
                         <span class="stat-total" id="atk-total">0</span>
                     </div>
@@ -146,7 +146,7 @@
                         <input type="number" min="0" max="252" value="0" class="ev-number" id="def-ev-num">
                         <input type="number" value="31" class="iv-input" id="def-iv">
                         <select class="nature-select" id="def-nature">
-                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                            <option value="1.0" selected>v</option><option value="1.1">+</option><option value="0.9">-</option>
                         </select>
                         <span class="stat-total" id="def-total">0</span>
                     </div>
@@ -157,7 +157,7 @@
                         <input type="number" min="0" max="252" value="252" class="ev-number" id="spa-ev-num">
                         <input type="number" value="31" class="iv-input" id="spa-iv">
                         <select class="nature-select" id="spa-nature">
-                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                            <option value="1.0" selected>v</option><option value="1.1">+</option><option value="0.9">-</option>
                         </select>
                         <span class="stat-total" id="spa-total">0</span>
                     </div>
@@ -168,7 +168,7 @@
                         <input type="number" min="0" max="252" value="0" class="ev-number" id="spd-ev-num">
                         <input type="number" value="31" class="iv-input" id="spd-iv">
                         <select class="nature-select" id="spd-nature">
-                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                            <option value="1.0" selected>v</option><option value="1.1">+</option><option value="0.9">-</option>
                         </select>
                         <span class="stat-total" id="spd-total">0</span>
                     </div>
@@ -179,7 +179,7 @@
                         <input type="number" min="0" max="252" value="252" class="ev-number" id="spe-ev-num">
                         <input type="number" value="31" class="iv-input" id="spe-iv">
                         <select class="nature-select" id="spe-nature">
-                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                            <option value="1.0" selected>v</option><option value="1.1">+</option><option value="0.9">-</option>
                         </select>
                         <span class="stat-total" id="spe-total">0</span>
                     </div>
