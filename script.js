@@ -1,6 +1,6 @@
 const API_URL = 'https://pokeapi.co/api/v2';
 let allPokemonNames = [];
-let currentLevel = 100; // Default to Level 100 (Singles standard)
+let currentLevel = 100;
 
 // --- CONFIGURATION: TYPE ENHANCING ITEMS (1.2x) ---
 const TYPE_BOOST_ITEMS = {
@@ -17,10 +17,11 @@ let battleState = {
         baseStats: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
         name: "Attacker",
         types: [],
-        moveListUrl: "" 
+        availableMoves: [] // Lista de movimientos del atacante actual
     },
     defender: {
-        baseStats: { hp: 255, def: 230, spd: 230 }, // Default Boss Stats
+        // CORREGIDO: Usamos las claves oficiales de la API para evitar el error de Def: 0
+        baseStats: { hp: 255, defense: 230, 'special-defense': 230 }, 
         name: "Ultimate Tank",
     },
     move: {
@@ -30,17 +31,19 @@ let battleState = {
 
 // --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
+    // 1. Cargar lista global de nombres
     try {
         const res = await fetch(`${API_URL}/pokemon?limit=1300`);
         const data = await res.json();
         allPokemonNames = data.results.map(p => p.name);
     } catch(e) { console.error("Error fetching Pokemon list:", e); }
 
+    // 2. Configurar Autocompletados
     setupAutocomplete('attacker-search', 'attacker-suggestions', 'attacker');
     setupAutocomplete('defender-search', 'defender-suggestions', 'defender');
-    setupMoveSearch();
+    setupMoveSearch(); // Ahora sí tiene la lógica completa
 
-    // Sync Sliders with Number Inputs
+    // 3. Sincronizar Sliders
     const stats = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
     stats.forEach(stat => {
         const slider = document.getElementById(`${stat}-ev`);
@@ -59,6 +62,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // 4. Listeners generales
     document.querySelectorAll('select, input.iv-input, #friendship-val').forEach(el => {
         el.addEventListener('change', recalcAll);
         el.addEventListener('input', recalcAll);
@@ -66,7 +70,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('attacker-item').addEventListener('change', updateStatusVisuals);
 
-    recalcAll(); // Initial load with the egg
+    // 5. Carga inicial
+    recalcAll();
 });
 
 // --- LEVEL CONTROL ---
@@ -92,13 +97,17 @@ async function loadPokemon(name, side) {
             battleState.attacker.baseStats = stats;
             battleState.attacker.name = data.name;
             battleState.attacker.types = data.types.map(t => t.type.name);
-            battleState.attacker.moveListUrl = `${API_URL}/pokemon/${data.id}`;
+            
+            // GUARDAR MOVIMIENTOS PARA EL AUTOCOMPLETADO
+            battleState.attacker.availableMoves = data.moves.map(m => m.move.name);
 
+            // Actualizar UI
             const sprite = data.sprites.other.home.front_default || data.sprites.front_default;
             document.getElementById('attacker-img').src = sprite;
             document.getElementById('attacker-name-display').textContent = data.name;
             populateAbilities('attacker-ability', data.abilities);
             
+            // Habilitar búsqueda de movimientos
             const moveInput = document.getElementById('move-search');
             moveInput.disabled = false;
             moveInput.placeholder = `Search ${data.name}'s moves...`;
@@ -112,16 +121,60 @@ async function loadPokemon(name, side) {
             document.getElementById('defender-name-display').textContent = data.name;
         }
         
-        // CRITICAL FIX: THIS WAS MISSING
         recalcAll();
 
     } catch(e) { console.error(e); }
 }
 
-async function setupMoveSearch() {
+// --- MOVE SEARCH ENGINE (CORREGIDO) ---
+function setupMoveSearch() {
     const input = document.getElementById('move-search');
+    const list = document.getElementById('move-suggestions');
+
+    // 1. Listener para mostrar sugerencias mientras escribes
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase();
+        list.innerHTML = '';
+        
+        // Si no hay texto o no hay pokemon cargado, ocultar
+        if(val.length < 2 || !battleState.attacker.availableMoves.length) {
+            list.style.display = 'none';
+            return;
+        }
+
+        // Filtrar movimientos del Pokemon actual
+        const matches = battleState.attacker.availableMoves
+            .filter(m => m.includes(val))
+            .slice(0, 10); // Limitar a 10 resultados
+
+        if(matches.length > 0) {
+            list.style.display = 'block';
+            matches.forEach(moveName => {
+                const div = document.createElement('div');
+                div.textContent = moveName.replace('-', ' ');
+                div.onclick = () => {
+                    input.value = moveName;
+                    list.style.display = 'none';
+                    loadMove(moveName); // Cargar datos del movimiento seleccionado
+                };
+                list.appendChild(div);
+            });
+        } else {
+            list.style.display = 'none';
+        }
+    });
+
+    // 2. Listener para cargar si presionas Enter o cambias el foco
     input.addEventListener('change', async () => {
-        if(input.value.length > 2) await loadMove(input.value);
+        // Solo cargar si no se ha cargado ya vía click
+        if(input.value.length > 2 && battleState.move.name !== input.value) {
+            await loadMove(input.value);
+        }
+    });
+    
+    // Ocultar al hacer click fuera
+    document.addEventListener('click', e => {
+        if(e.target !== input) list.style.display = 'none';
     });
 }
 
@@ -133,10 +186,15 @@ async function loadMove(name) {
         const data = await res.json();
 
         battleState.move = {
-            name: data.name, power: data.power || 0, type: data.type.name, damageClass: data.damage_class.name
+            name: data.name,
+            power: data.power || 0,
+            type: data.type.name,
+            damageClass: data.damage_class.name
         };
 
         document.getElementById('move-info-display').textContent = `${data.name} (${data.damage_class.name})`;
+        
+        // Mostrar input de Amistad si es necesario
         const isFriendshipMove = ['return', 'frustration'].includes(cleanName);
         document.getElementById('friendship-row').style.display = isFriendshipMove ? 'flex' : 'none';
 
@@ -167,6 +225,7 @@ function updateStats() {
     const bases = battleState.attacker.baseStats;
     if(!bases.hp) return null; 
 
+    // Attacker Stats
     const atk = calcStat(bases.attack, getVal('atk-iv'), getEv('atk-ev'), currentLevel, getNature('atk-nature'), false);
     const spa = calcStat(bases['special-attack'], getVal('spa-iv'), getEv('spa-ev'), currentLevel, getNature('spa-nature'), false);
     
@@ -177,10 +236,16 @@ function updateStats() {
     document.getElementById('spd-total').textContent = calcStat(bases['special-defense'], getVal('spd-iv'), getEv('spd-ev'), currentLevel, getNature('spd-nature'), false);
     document.getElementById('spe-total').textContent = calcStat(bases.speed, getVal('spe-iv'), getEv('spe-ev'), currentLevel, getNature('spe-nature'), false);
 
+    // Defender Stats (CORREGIDO PARA USAR CLAVES CORRECTAS)
     const defBases = battleState.defender.baseStats;
-    const dHp = calcStat(defBases.hp, 31, 252, currentLevel, 1, true);
-    const dDef = calcStat(defBases.defense, 31, 252, currentLevel, 1.1, false);
-    const dSpd = calcStat(defBases.spd || defBases['special-defense'], 31, 252, currentLevel, 1.1, false);
+    // Buscamos 'defense' o 'def' por seguridad
+    const baseDef = defBases.defense || defBases.def || 0; 
+    const baseSpd = defBases['special-defense'] || defBases.spd || 0;
+    const baseHp = defBases.hp || 0;
+
+    const dHp = calcStat(baseHp, 31, 252, currentLevel, 1, true);
+    const dDef = calcStat(baseDef, 31, 252, currentLevel, 1.1, false);
+    const dSpd = calcStat(baseSpd, 31, 252, currentLevel, 1.1, false);
 
     document.getElementById('def-hp-display').textContent = dHp;
     document.getElementById('def-def-display').textContent = dDef;
@@ -194,11 +259,8 @@ function recalcAll() {
     updateStatusVisuals();
     const stats = updateStats();
     
-    // If no attacker stats loaded yet, show waiting message
     if(!stats) {
          document.getElementById('log-text').textContent = "Waiting for attacker data...";
-         document.getElementById('damage-percent').textContent = "0%";
-         document.getElementById('hits-to-ko').textContent = "-";
          return;
     }
 
@@ -220,7 +282,8 @@ function recalcAll() {
     }
 
     let A = (move.damageClass === 'physical') ? stats.atkObj.atk : stats.atkObj.spa;
-    let D = (move.damageClass === 'physical') ? stats.defObj.def : stats.defObj.spd;
+    // Si la defensa es 0 (por error de datos), evita división por cero usando 1
+    let D = (move.damageClass === 'physical') ? (stats.defObj.def || 1) : (stats.defObj.spd || 1);
 
     const hasStatus = (item === 'flame-orb' || item === 'toxic-orb');
     if(ability === 'guts' && hasStatus && move.damageClass === 'physical') A = Math.floor(A * 1.5);
@@ -248,7 +311,7 @@ function recalcAll() {
     const minDmg = Math.floor(damage * 0.85);
     const maxDmg = damage;
 
-    const hp = stats.defObj.hp;
+    const hp = stats.defObj.hp || 1; // Evitar division por cero
     const minPct = ((minDmg / hp) * 100).toFixed(1);
     const maxPct = ((maxDmg / hp) * 100).toFixed(1);
     
@@ -325,7 +388,8 @@ async function setDefenderPreset(name) {
 }
 
 function resetBoss() {
-    battleState.defender.baseStats = { hp: 255, def: 230, spd: 230 };
+    // CORREGIDO: Usamos claves estandar para evitar bug de Def: 0
+    battleState.defender.baseStats = { hp: 255, defense: 230, 'special-defense': 230 };
     document.getElementById('defender-name-display').textContent = "BOSS";
     document.getElementById('defender-img').src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png";
     recalcAll();
