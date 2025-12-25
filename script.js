@@ -1,267 +1,292 @@
 const API_URL = 'https://pokeapi.co/api/v2';
-let allPokemonNames = []; 
+let allPokemonNames = [];
 
-// Estadísticas del frankestein
-const ULTIMATE_TANK_STATS = {
-    name: "Ultimate Tank",
-    hp: 714,    // Max Blissey
-    def: 614,   // Max Shuckle
-    spDef: 614, // Max Shuckle
-    sprite: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png" 
+// --- STATE MANAGEMENT ---
+let battleState = {
+    attacker: {
+        baseStats: { atk: 100, spa: 100, spe: 100 },
+        name: "Attacker",
+        types: [] // Stores 'fire', 'flying', etc.
+    },
+    defender: {
+        baseStats: { hp: 255, def: 230, spd: 230 }, // Default Boss
+        name: "Ultimate Tank",
+        types: []
+    },
+    move: {
+        power: 0,
+        type: 'normal',
+        damageClass: 'physical',
+        name: 'Tackle'
+    }
 };
 
+const BOSS_STATS = { hp: 255, def: 230, spd: 230 }; 
+
+// --- INITIALIZATION ---
 window.addEventListener('DOMContentLoaded', async () => {
+    // 1. Load Name List for Autocomplete
     try {
-
-        const response = await fetch(`${API_URL}/pokemon?limit=1300`);
-        const data = await response.json();
+        const res = await fetch(`${API_URL}/pokemon?limit=1300`);
+        const data = await res.json();
         allPokemonNames = data.results.map(p => p.name);
-        console.log("Base de datos de nombres cargada.");
-    } catch (e) {
-        console.error("Error cargando lista de Pokémon:", e);
-    }
+    } catch (e) { console.error("API Error", e); }
 
-    // Configuracion de eventos de autocompletado
-    setupAutocomplete(document.getElementById('attackerInput'), document.getElementById('attacker-suggestions'));
-    setupAutocomplete(document.getElementById('defenderInput'), document.getElementById('defender-suggestions'));
+    // 2. Setup Listeners
+    setupAutocomplete(document.getElementById('attacker-search'), document.getElementById('attacker-suggestions'), 'attacker');
+    setupAutocomplete(document.getElementById('defender-search'), document.getElementById('defender-suggestions'), 'defender');
+    
+    document.getElementById('move-search').addEventListener('change', async (e) => {
+        if(e.target.value) await loadMove(e.target.value);
+    });
+
+    // 3. Attach Live Calculation to Attacker inputs
+    const inputs = document.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        input.addEventListener('input', () => {
+            updateStatsAndCalc(); 
+        });
+    });
+
+    // 4. Initial Load
+    updateStatsAndCalc();
 });
 
-// --- LÓGICA DE AUTOCOMPLETADO ---
-function setupAutocomplete(input, listContainer) {
-    input.addEventListener('input', function () {
-        const val = this.value.toLowerCase();
-        listContainer.innerHTML = '';
+// --- CORE FUNCTIONS ---
 
-        if (!val) {
-            listContainer.style.display = 'none';
-            return;
-        }
+async function loadPokemon(name, side) {
+    try {
+        const cleanName = name.toLowerCase().replace(' ', '-');
+        const res = await fetch(`${API_URL}/pokemon/${cleanName}`);
+        if (!res.ok) throw new Error('Not found');
+        const data = await res.json();
 
-        // Filtro
-        const matches = allPokemonNames.filter(name => name.startsWith(val)).slice(0, 5); 
+        const stats = {};
+        data.stats.forEach(s => stats[s.stat.name] = s.base_stat);
+        const types = data.types.map(t => t.type.name);
 
-        if (matches.length > 0) {
-            listContainer.style.display = 'block';
-            matches.forEach(name => {
-                const item = document.createElement('div');
-                item.textContent = name;
-                item.addEventListener('click', () => {
-                    input.value = name; 
-                    listContainer.style.display = 'none'; 
- 
-                });
-                listContainer.appendChild(item);
+        if (side === 'attacker') {
+            battleState.attacker.baseStats = { 
+                atk: stats['attack'], 
+                spa: stats['special-attack'], 
+                spe: stats['speed'] 
+            };
+            battleState.attacker.name = data.name;
+            battleState.attacker.types = types;
+            
+            // Visuals
+            const sprite = data.sprites.other.home.front_default || data.sprites.front_default;
+            document.getElementById('attacker-img').src = sprite;
+            document.getElementById('attacker-name-display').textContent = data.name;
+            
+            // Render Types Badge
+            const typeContainer = document.getElementById('attacker-types');
+            typeContainer.innerHTML = '';
+            types.forEach(t => {
+                const span = document.createElement('span');
+                span.className = 'type-span';
+                span.textContent = t;
+                typeContainer.appendChild(span);
             });
+
+            populateAbilities('attacker-ability', data.abilities);
+            
         } else {
-            listContainer.style.display = 'none';
+            // Defender Side
+            battleState.defender.baseStats = { 
+                hp: stats['hp'], 
+                def: stats['defense'], 
+                spd: stats['special-defense'] 
+            };
+            battleState.defender.name = data.name;
+            battleState.defender.types = types;
+            
+            const sprite = data.sprites.other.home.front_default || data.sprites.front_default;
+            document.getElementById('defender-img').src = sprite;
+            document.getElementById('defender-name-display').textContent = data.name;
+            
+            populateAbilities('defender-ability', data.abilities);
         }
+
+        updateStatsAndCalc();
+
+    } catch (err) { console.error(err); }
+}
+
+async function loadMove(name) {
+    try {
+        const cleanName = name.trim().toLowerCase().replace(' ', '-');
+        const res = await fetch(`${API_URL}/move/${cleanName}`);
+        if (!res.ok) throw new Error('Move not found');
+        const data = await res.json();
+
+        battleState.move = {
+            name: data.name,
+            power: data.power || 0,
+            type: data.type.name,
+            damageClass: data.damage_class.name
+        };
+
+        document.getElementById('move-info-display').textContent = 
+            `${data.name} (${data.type.name.toUpperCase()} / ${data.damage_class.name})`;
+        
+        updateStatsAndCalc();
+
+    } catch (err) { console.error(err); }
+}
+
+function populateAbilities(selectId, abilities) {
+    const select = document.getElementById(selectId);
+    select.innerHTML = '<option value="">Standard</option>';
+    abilities.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.ability.name;
+        opt.textContent = a.ability.name.replace('-', ' ');
+        select.appendChild(opt);
     });
-
-
-    document.addEventListener('click', (e) => {
-        if (e.target !== input) {
-            listContainer.style.display = 'none';
-        }
-    });
 }
 
-// --- FUNCIONES DE API Y CÁLCULO ---
+// --- MATH ENGINE ---
 
-async function getPokemonData(name) {
-    const cleanName = name.trim().toLowerCase().replace(' ', '-');
-    const response = await fetch(`${API_URL}/pokemon/${cleanName}`);
-    if (!response.ok) throw new Error(`Pokémon "${name}" no encontrado`);
-    return await response.json();
-}
-
-async function getMoveData(name) {
-    const cleanName = name.trim().toLowerCase().replace(' ', '-');
-    const response = await fetch(`${API_URL}/move/${cleanName}`);
-    if (!response.ok) throw new Error(`Movimiento "${name}" no encontrado`);
-    return await response.json();
-}
-
-// Función auxiliar para calcular stats al Nivel 100 con MAX bulk (IV 31, EV 252, Nature +)
-function calculateMaxStat(base, isHP) {
-    // Fórmula HP: floor((2*Base + 31 + 63) * 100 / 100) + 100 + 10
-    // Fórmula Stat: floor(( (2*Base + 31 + 63) * 100 / 100 ) + 5) * 1.1
-    // Simplificado para Nivel 100, IV 31, EV 252:
+function calcStat(base, iv, ev, level, natureMult, isHP) {
     if (isHP) {
-        return (2 * base + 94) + 110;
+        if (base === 1) return 1; 
+        return Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100) + level + 10;
     } else {
-        return Math.floor(((2 * base + 94) + 5) * 1.1);
+        const core = Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100) + 5;
+        return Math.floor(core * natureMult);
     }
 }
 
-function calculateDamage(attacker, move, defenderStats) {
-    const level = 100;
-    const power = move.power || 0;
-    const attackClass = move.damage_class.name;
+function updateStatsAndCalc() {
+    // 1. Calculate Attacker Stats (From Sliders)
+    const getVal = (id) => parseInt(document.getElementById(id).value) || 0;
+    const getFloat = (id) => parseFloat(document.getElementById(id).value) || 1.0;
 
-    if (attackClass === 'status' || power === 0) return { min: 0, max: 0, attackClass };
+    const atkTotal = calcStat(battleState.attacker.baseStats.atk, getVal('atk-iv'), getVal('atk-ev'), 100, getFloat('atk-nature'), false);
+    const spaTotal = calcStat(battleState.attacker.baseStats.spa, getVal('spa-iv'), getVal('spa-ev'), 100, getFloat('spa-nature'), false);
+    
+    document.getElementById('atk-total').textContent = atkTotal;
+    document.getElementById('spa-total').textContent = spaTotal;
 
-    // STATS ATACANTE 
-    let attackStatBase = 0;
-    if (attackClass === 'physical') {
-        attackStatBase = attacker.stats.find(s => s.stat.name === 'attack').base_stat;
-    } else {
-        attackStatBase = attacker.stats.find(s => s.stat.name === 'special-attack').base_stat;
-    }
-    // Formula simplificada Atacante (Max Stats): (2*Base + 94 + 5) * 1.1
-    const A = Math.floor(((2 * attackStatBase + 31 + 63) + 5) * 1.1);
+    // 2. Calculate Defender Stats (AUTO MAX)
+    // We assume: Lvl 100, IV 31, EV 252, Nature 1.1 (Beneficial) for Defenses
+    const defHp = calcStat(battleState.defender.baseStats.hp, 31, 252, 100, 1, true);
+    const defDef = calcStat(battleState.defender.baseStats.def, 31, 252, 100, 1.1, false);
+    const defSpd = calcStat(battleState.defender.baseStats.spd, 31, 252, 100, 1.1, false);
 
-    // STATS DEFENSOR
-    const D = (attackClass === 'physical') ? defenderStats.def : defenderStats.spDef;
+    // Update Read-Only Display
+    document.getElementById('def-hp-display').textContent = defHp;
+    document.getElementById('def-def-display').textContent = defDef;
+    document.getElementById('def-spd-display').textContent = defSpd;
 
-    // FÓRMULA DE DAÑO
-    let damage = Math.floor(Math.floor(Math.floor(2 * level / 5 + 2) * power * A / D) / 50) + 2;
-
-    // STAB
-    const isStab = attacker.types.some(t => t.type.name === move.type.name);
-    if (isStab) damage = Math.floor(damage * 1.5);
-
-    // Random (Roll bajo 0.85)
-    const minDamage = Math.floor(damage * 0.85);
-    const maxDamage = damage;
-
-    return { min: minDamage, max: maxDamage, attackClass };
+    // 3. Run Battle Calc
+    calculateDamage({ atkTotal, spaTotal }, { hp: defHp, def: defDef, spd: defSpd });
 }
 
-// --- FUNCIÓN PRINCIPAL ---
-
-async function calcularBatalla() {
-    const atkName = document.getElementById('attackerInput').value;
-    const moveName = document.getElementById('moveInput').value;
-    const defName = document.getElementById('defenderInput').value;
-
-    const ui = {
-        atkImg: document.getElementById('attacker-img'),
-        atkLabel: document.getElementById('attacker-label'),
-        defImg: document.getElementById('defender-img'),
-        defLabel: document.getElementById('defender-label'),
-        results: document.getElementById('results-text'),
-        damageBadge: document.getElementById('damage-result')
-    };
-
-    if (!atkName || !moveName) {
-        alert("Necesitas un Atacante y un Movimiento.");
+function calculateDamage(attackerStats, defenderStats) {
+    const move = battleState.move;
+    
+    if (move.power === 0) {
+        document.getElementById('log-text').textContent = "Status move or no power selected.";
+        document.getElementById('damage-percent').textContent = "0%";
+        document.getElementById('hits-to-ko').textContent = "Hits to KO: -";
         return;
     }
 
-    ui.results.innerHTML = "Calculando...";
-    ui.results.classList.remove('hidden');
+    // A. Stats
+    let A = (move.damageClass === 'physical') ? attackerStats.atkTotal : attackerStats.spaTotal;
+    let D = (move.damageClass === 'physical') ? defenderStats.def : defenderStats.spd;
+    
+    // B. Abilities
+    const atkAbility = document.getElementById('attacker-ability').value;
+    const defAbility = document.getElementById('defender-ability').value;
 
-    try {
-        // Cargar Atacante y Movimiento
-        const attacker = await getPokemonData(atkName);
-        const move = await getMoveData(moveName);
+    if (atkAbility === 'huge-power' || atkAbility === 'pure-power') A *= 2;
+    if (defAbility === 'fur-coat' && move.damageClass === 'physical') D *= 2;
+    if (defAbility === 'ice-scales' && move.damageClass === 'special') D *= 2;
 
-        // Actualizar UI Atacante
-        ui.atkImg.src = attacker.sprites.front_default;
-        ui.atkLabel.textContent = attacker.name;
+    // C. Base Damage
+    const level = 100;
+    let damage = Math.floor(Math.floor(Math.floor(2 * level / 5 + 2) * move.power * A / D) / 50) + 2;
 
-        //  Determinar Defensor
-        let defenderStats = { ...ULTIMATE_TANK_STATS }; 
-
-        if (defName.trim() !== "") {
-            // En caso de elegir tanque específico
-            const defender = await getPokemonData(defName);
-
-            // Calculo de stats máximos posibles 
-            const hpBase = defender.stats.find(s => s.stat.name === 'hp').base_stat;
-            const defBase = defender.stats.find(s => s.stat.name === 'defense').base_stat;
-            const spDefBase = defender.stats.find(s => s.stat.name === 'special-defense').base_stat;
-
-            defenderStats = {
-                name: defender.name,
-                hp: calculateMaxStat(hpBase, true),
-                def: calculateMaxStat(defBase, false),
-                spDef: calculateMaxStat(spDefBase, false)
-            };
-
-            // Actualizar UI Defensor
-            ui.defImg.src = defender.sprites.front_default;
-            ui.defLabel.textContent = defender.name;
-        } else {
-            // Restaurar UI frankestein
-            ui.defImg.src = ULTIMATE_TANK_STATS.sprite;
-            ui.defLabel.textContent = "BOSS: ULTIMATE TANK";
-        }
-
-        // 3. Calcular
-        const damage = calculateDamage(attacker, move, defenderStats);
-
-        // 4. Mostrar Resultados
-        const minPercent = ((damage.min / defenderStats.hp) * 100).toFixed(1);
-        const maxPercent = ((damage.max / defenderStats.hp) * 100).toFixed(1);
-
-        ui.damageBadge.textContent = `${maxPercent}%`;
-        ui.damageBadge.classList.remove('hidden');
-
-        // Lógica de golpes para KO
-        const minHits = damage.max > 0 ? Math.ceil(defenderStats.hp / damage.max) : '∞';
-        const maxHits = damage.min > 0 ? Math.ceil(defenderStats.hp / damage.min) : '∞';
-
-        ui.results.innerHTML = `
-            <h3>${attacker.name.toUpperCase()} vs ${defenderStats.name.toUpperCase()}</h3>
-            <p><strong>Ataque:</strong> ${move.name} (${damage.attackClass}, Poder: ${move.power})</p>
-            <p><strong>Daño:</strong> ${damage.min} - ${damage.max} HP (${minPercent}% - ${maxPercent}%)</p>
-            <hr>
-            <p class="big-result">
-                Golpes para debilitar: <strong>${minHits} - ${maxHits}</strong>
-            </p>
-            <small>Defensor calculado con Max HP/Def (Naturaleza favorable, 252 EVs)</small>
-        `;
-
-    } catch (err) {
-        console.error(err);
-        ui.results.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+    // D. Modifiers
+    
+    // 1. STAB (Same Type Attack Bonus)
+    let stabText = "";
+    if (battleState.attacker.types.includes(move.type)) {
+        damage = Math.floor(damage * 1.5);
+        stabText = "(STAB)";
     }
-}
 
-// Botón para reiniciar al frankestein
-function setUltimateTank() {
-    document.getElementById('defenderInput').value = '';
-    document.getElementById('defender-img').src = ULTIMATE_TANK_STATS.sprite;
-    document.getElementById('defender-label').textContent = "Ultimate Tank";
-    document.getElementById('results-text').classList.add('hidden');
-    document.getElementById('damage-result').classList.add('hidden');
-}
-
-function limpiar() {
-    document.getElementById('attackerInput').value = '';
-    document.getElementById('moveInput').value = '';
-    setUltimateTank();
-    document.getElementById('attacker-img').src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/eggs/1.png";
-    document.getElementById('attacker-label').textContent = "Atacante";
-}
-
-
-// --- FUNCIÓN PARA BOTONES RÁPIDOS ---
-function selectTank(name) {
-    const defInput = document.getElementById('defenderInput');
-    defInput.value = name;
-
-    document.getElementById('defender-label').textContent = "Cargando...";
-
-    const atkValue = document.getElementById('attackerInput').value;
-    if (atkValue) {
-        calcularBatalla();
-    } else {
-       
-        updateTankVisuals(name);
+    // 2. Ability Defense
+    if ((defAbility === 'multiscale' || defAbility === 'shadow-shield') && defenderStats.hp > 0) {
+        damage = Math.floor(damage * 0.5);
     }
+
+    // E. Ranges
+    const minDmg = Math.floor(damage * 0.85);
+    const maxDmg = damage;
+
+    // F. Results
+    const minPct = ((minDmg / defenderStats.hp) * 100).toFixed(1);
+    const maxPct = ((maxDmg / defenderStats.hp) * 100).toFixed(1);
+    
+    const minHits = Math.ceil(defenderStats.hp / maxDmg);
+    const maxHits = Math.ceil(defenderStats.hp / minDmg);
+
+    // Update UI
+    document.getElementById('damage-percent').textContent = `${minPct}% - ${maxPct}%`;
+    document.getElementById('hits-to-ko').textContent = `Hits to KO: ${minHits} - ${maxHits}`;
+    document.getElementById('log-text').innerHTML = `
+        Dealt <b>${minDmg} - ${maxDmg}</b> damage ${stabText} to <b>${defenderStats.hp} HP</b>. <br>
+        <small>(Atk Stat: ${A} vs Def Stat: ${D})</small>
+    `;
 }
 
-async function updateTankVisuals(name) {
-    try {
-        const defender = await getPokemonData(name);
-        document.getElementById('defender-img').src = defender.sprites.front_default;
-        document.getElementById('defender-label').textContent = defender.name;
-    } catch (e) {
-        console.error(e);
-    }
+// --- UTILS ---
+
+function setupAutocomplete(input, list, side) {
+    input.addEventListener('input', function() {
+        const val = this.value.toLowerCase();
+        list.innerHTML = '';
+        if (!val) { list.style.display = 'none'; return; }
+        
+        const matches = allPokemonNames.filter(n => n.startsWith(val)).slice(0, 5);
+        if (matches.length > 0) {
+            list.style.display = 'block';
+            matches.forEach(name => {
+                const div = document.createElement('div');
+                div.textContent = name;
+                div.onclick = () => {
+                    input.value = name;
+                    list.style.display = 'none';
+                    loadPokemon(name, side);
+                };
+                list.appendChild(div);
+            });
+        } else { list.style.display = 'none'; }
+    });
+
+    document.addEventListener('click', e => {
+        if (e.target !== input) list.style.display = 'none';
+    });
 }
 
+async function setDefenderPreset(name) {
+    document.getElementById('defender-search').value = name;
+    await loadPokemon(name, 'defender');
+}
 
-// ... (asegúrate de que calcularBatalla use el valor del input actualizado) ...
+function resetBoss() {
+    battleState.defender.baseStats = { ...BOSS_STATS };
+    battleState.defender.name = "Ultimate Tank";
+    battleState.defender.types = ['bug', 'rock']; 
+    
+    document.getElementById('defender-search').value = "";
+    document.getElementById('defender-name-display').textContent = "BOSS: ULTIMATE TANK";
+    document.getElementById('defender-img').src = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/213.png";
+    document.getElementById('defender-ability').innerHTML = '<option value="">Standard</option>';
+    
+    updateStatsAndCalc();
+}
