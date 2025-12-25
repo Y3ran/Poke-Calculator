@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate Damage Calculator</title>
+    <title>Pro Battle Calculator</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
@@ -12,9 +12,15 @@
     <header>
         <div class="logo-area">
             <span class="logo-text-blue">Pokémon</span> 
-            <span class="logo-text-pink">Battle Engine</span>
+            <span class="logo-text-pink">Strategy Lab</span>
         </div>
-        <p class="subtitle">STAB Enabled • Auto-Max Defenses</p>
+        <div class="global-settings">
+            <div class="toggle-group">
+                <label>Level:</label>
+                <div class="toggle-btn active" id="lvl-100-btn" onclick="setLevel(100)">100</div>
+                <div class="toggle-btn" id="lvl-50-btn" onclick="setLevel(50)">50</div>
+            </div>
+        </div>
     </header>
 
     <main>
@@ -23,113 +29,188 @@
                 
                 <div class="pokemon-slot">
                     <div class="slot-circle" id="attacker-circle">
-                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/egg.png" id="attacker-img" alt="Attacker">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/eggs/1.png" id="attacker-img" alt="Attacker">
                     </div>
-                    <div class="name-tag" id="attacker-name-display">Attacker</div>
-                    <div class="type-badges" id="attacker-types"></div>
+                    <div class="name-tag" id="attacker-name-display">???</div>
+                    <div class="status-badge hidden" id="attacker-status-badge"></div>
                 </div>
 
                 <div class="vs-column">
                     <div class="damage-badge" id="damage-percent">0%</div>
                     <div class="hits-text" id="hits-to-ko">Hits to KO: -</div>
-                    <div class="move-info" id="move-info-display">Select a Move</div>
+                    <div class="move-info" id="move-info-display">Select Move</div>
                 </div>
 
                 <div class="pokemon-slot">
                     <div class="slot-circle tank-circle" id="defender-circle">
-                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/213.png" id="defender-img" alt="Defender">
+                        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/213.png" id="defender-img" alt="Defender">
                     </div>
                     <div class="name-tag" id="defender-name-display">Ultimate Tank</div>
                 </div>
             </div>
             
-            <div id="log-text" class="battle-log">Waiting for input...</div>
+            <div id="log-text" class="battle-log">Waiting for combat data...</div>
         </section>
 
         <div class="engine-grid">
             
             <section class="card control-card">
-                <h3 class="card-title">Attacker Configuration</h3>
+                <h3 class="card-title">Attacker Setup</h3>
                 
                 <div class="input-group">
                     <label>Pokémon</label>
-                    <input type="text" id="attacker-search" placeholder="Search Pokémon..." autocomplete="off">
+                    <input type="text" id="attacker-search" placeholder="Search..." autocomplete="off">
                     <div id="attacker-suggestions" class="suggestions-list"></div>
                 </div>
 
-                <div class="input-group">
-                    <label>Move</label>
-                    <input type="text" id="move-search" placeholder="Search Move..." autocomplete="off">
+                <div class="row-group">
+                    <div class="input-group half">
+    <label>Item</label>
+    <select id="attacker-item">
+        <option value="">None</option>
+        
+        <optgroup label="Competitive Standards">
+            <option value="life-orb">Life Orb (1.3x Dmg)</option>
+            <option value="choice-band">Choice Band (1.5x Atk)</option>
+            <option value="choice-specs">Choice Specs (1.5x SpA)</option>
+            <option value="flame-orb">Flame Orb (Burn)</option>
+            <option value="toxic-orb">Toxic Orb (Poison)</option>
+        </optgroup>
+
+        <optgroup label="Type Enhancers (1.2x)">
+            <option value="silk-scarf">Silk Scarf (Normal)</option>
+            <option value="charcoal">Charcoal (Fire)</option>
+            <option value="mystic-water">Mystic Water (Water)</option>
+            <option value="magnet">Magnet (Electric)</option>
+            <option value="miracle-seed">Miracle Seed (Grass)</option>
+            <option value="never-melt-ice">Never-Melt Ice (Ice)</option>
+            <option value="black-belt">Black Belt (Fighting)</option>
+            <option value="poison-barb">Poison Barb (Poison)</option>
+            <option value="soft-sand">Soft Sand (Ground)</option>
+            <option value="sharp-beak">Sharp Beak (Flying)</option>
+            <option value="twisted-spoon">Twisted Spoon (Psychic)</option>
+            <option value="silver-powder">Silver Powder (Bug)</option>
+            <option value="hard-stone">Hard Stone (Rock)</option>
+            <option value="spell-tag">Spell Tag (Ghost)</option>
+            <option value="dragon-fang">Dragon Fang (Dragon)</option>
+            <option value="black-glasses">Black Glasses (Dark)</option>
+            <option value="metal-coat">Metal Coat (Steel)</option>
+            <option value="fairy-feather">Fairy Feather (Fairy)</option>
+        </optgroup>
+    </select>
+</div>
+                    <div class="input-group half">
+                        <label>Ability</label>
+                        <select id="attacker-ability"><option value="">Standard</option></select>
+                    </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Ability</label>
-                    <select id="attacker-ability"><option value="">Standard</option></select>
+                    <label>Move (Auto-Filtered)</label>
+                    <input type="text" id="move-search" placeholder="Search learnable moves..." autocomplete="off" disabled>
+                    <div id="move-suggestions" class="suggestions-list"></div>
+                </div>
+
+                <div class="row-group" id="friendship-row" style="display:none;">
+                    <div class="input-group">
+                        <label>Friendship (0-255)</label>
+                        <input type="number" id="friendship-val" value="255" min="0" max="255">
+                    </div>
                 </div>
 
                 <div class="stats-panel">
-                    <h4>Offensive Stats (Adjustable)</h4>
+                    <h4>Stats & EVs</h4>
                     
                     <div class="stat-row">
+                        <span class="stat-label">HP</span>
+                        <input type="range" min="0" max="252" value="0" class="ev-slider" id="hp-ev">
+                        <input type="number" min="0" max="252" value="0" class="ev-number" id="hp-ev-num">
+                        <input type="number" value="31" class="iv-input" id="hp-iv">
+                        <span class="stat-total" id="hp-total">0</span>
+                    </div>
+
+                    <div class="stat-row">
                         <span class="stat-label">Atk</span>
-                        <input type="range" min="0" max="252" value="252" class="ev-slider" id="atk-ev" title="EVs">
-                        <input type="number" min="0" max="31" value="31" class="iv-input" id="atk-iv" title="IVs">
+                        <input type="range" min="0" max="252" value="252" class="ev-slider" id="atk-ev">
+                        <input type="number" min="0" max="252" value="252" class="ev-number" id="atk-ev-num">
+                        <input type="number" value="31" class="iv-input" id="atk-iv">
                         <select class="nature-select" id="atk-nature">
-                            <option value="1.1" selected>+ (Adamant)</option>
-                            <option value="1.0">Neutral</option>
-                            <option value="0.9">- Mod</option>
+                            <option value="1.1" selected>+</option><option value="1.0">-</option><option value="0.9">v</option>
                         </select>
                         <span class="stat-total" id="atk-total">0</span>
                     </div>
 
                     <div class="stat-row">
+                        <span class="stat-label">Def</span>
+                        <input type="range" min="0" max="252" value="0" class="ev-slider" id="def-ev">
+                        <input type="number" min="0" max="252" value="0" class="ev-number" id="def-ev-num">
+                        <input type="number" value="31" class="iv-input" id="def-iv">
+                        <select class="nature-select" id="def-nature">
+                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                        </select>
+                        <span class="stat-total" id="def-total">0</span>
+                    </div>
+
+                     <div class="stat-row">
                         <span class="stat-label">SpA</span>
-                        <input type="range" min="0" max="252" value="252" class="ev-slider" id="spa-ev" title="EVs">
-                        <input type="number" min="0" max="31" value="31" class="iv-input" id="spa-iv" title="IVs">
+                        <input type="range" min="0" max="252" value="252" class="ev-slider" id="spa-ev">
+                        <input type="number" min="0" max="252" value="252" class="ev-number" id="spa-ev-num">
+                        <input type="number" value="31" class="iv-input" id="spa-iv">
                         <select class="nature-select" id="spa-nature">
-                            <option value="1.1" selected>+ (Modest)</option>
-                            <option value="1.0">Neutral</option>
-                            <option value="0.9">- Mod</option>
+                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
                         </select>
                         <span class="stat-total" id="spa-total">0</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span class="stat-label">SpD</span>
+                        <input type="range" min="0" max="252" value="0" class="ev-slider" id="spd-ev">
+                        <input type="number" min="0" max="252" value="0" class="ev-number" id="spd-ev-num">
+                        <input type="number" value="31" class="iv-input" id="spd-iv">
+                        <select class="nature-select" id="spd-nature">
+                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                        </select>
+                        <span class="stat-total" id="spd-total">0</span>
+                    </div>
+
+                    <div class="stat-row">
+                        <span class="stat-label">Spe</span>
+                        <input type="range" min="0" max="252" value="252" class="ev-slider" id="spe-ev">
+                        <input type="number" min="0" max="252" value="252" class="ev-number" id="spe-ev-num">
+                        <input type="number" value="31" class="iv-input" id="spe-iv">
+                        <select class="nature-select" id="spe-nature">
+                            <option value="1.0" selected>-</option><option value="1.1">+</option><option value="0.9">v</option>
+                        </select>
+                        <span class="stat-total" id="spe-total">0</span>
                     </div>
                 </div>
             </section>
 
             <section class="card control-card">
-                <h3 class="card-title">Defender (Target)</h3>
-                
+                <h3 class="card-title">Target</h3>
                 <div class="input-group">
-                    <label>Target Pokémon</label>
-                    <input type="text" id="defender-search" placeholder="Search or select below..." autocomplete="off">
+                    <label>Pokémon</label>
+                    <input type="text" id="defender-search" placeholder="Search..." autocomplete="off">
                     <div id="defender-suggestions" class="suggestions-list"></div>
                 </div>
-
+                
                 <div class="quick-picks">
                     <button onclick="setDefenderPreset('blissey')" class="chip">❤ Blissey</button>
                     <button onclick="setDefenderPreset('shuckle')" class="chip">🛡️ Shuckle</button>
-                    <button onclick="setDefenderPreset('regice')" class="chip">🔮 Regice</button>
+                    <button onclick="setDefenderPreset('toxapex')" class="chip">☣️ Toxapex</button>
                     <button onclick="resetBoss()" class="chip boss-chip">💀 BOSS</button>
                 </div>
 
-                <div class="input-group">
-                    <label>Ability</label>
-                    <select id="defender-ability"><option value="">Standard</option></select>
-                </div>
-
                 <div class="stats-panel info-panel">
-                    <h4>Max Theoretical Stats (Auto-Calc)</h4>
-                    <p class="stat-info-row">HP: <strong id="def-hp-display">-</strong> <small>(Max)</small></p>
-                    <p class="stat-info-row">Defense: <strong id="def-def-display">-</strong> <small>(Max+)</small></p>
-                    <p class="stat-info-row">Sp. Def: <strong id="def-spd-display">-</strong> <small>(Max+)</small></p>
-                    <div class="info-note">
-                        *Tank assumes Lvl 100, 31 IVs, 252 EVs, and Beneficial Nature in all defensive stats.
-                    </div>
+                    <h4>Target Max Stats</h4>
+                    <p class="stat-info-row">HP: <strong id="def-hp-display">-</strong></p>
+                    <p class="stat-info-row">Def: <strong id="def-def-display">-</strong></p>
+                    <p class="stat-info-row">SpD: <strong id="def-spd-display">-</strong></p>
+                    <div class="info-note">*Auto-calculated max bulk for current level.</div>
                 </div>
             </section>
         </div>
     </main>
-
     <script src="script.js"></script>
 </body>
 </html>
